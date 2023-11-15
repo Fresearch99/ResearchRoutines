@@ -1,5 +1,6 @@
 """
 DATE: 11/14/2023
+AUTHOR: Dominik Jurek
 METHOD: Translation of the NBER patent project name standardization routine Python
         Reference: https://sites.google.com/site/patentdataproject/Home/posts/namestandardizationroutinesuploaded
         

@@ -1,5 +1,6 @@
 """
     DATE: 11/14/2023
+    AUTHOR: Dominik Jurek
     METHOD: Program to download EDGAR text files
 
     Code based on:
@@ -654,10 +655,6 @@ if __name__ == '__main__':
                        PARM_CIK=[320193], 
                        PARM_BGNQTR=1, 
                        PARM_ENDQTR=4)
-
-#_url = 'https://www.sec.gov/Archives/edgar/data/1074828/0001199835-08-000024.txt'
-#test_url = 'https://www.sec.gov/Archives/edgar/data/1000180/0001000180-10-000008.txt'
-#response = requests.get(_url)
 
 
 
