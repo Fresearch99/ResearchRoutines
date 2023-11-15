@@ -1,18 +1,33 @@
-# -*- coding: utf-8 -*-
 """
-Author: Dominik Jurek
+DATE: 11/14/2023
+METHOD: Translation of the NBER patent project name standardization routine Python
+        Reference: https://sites.google.com/site/patentdataproject/Home/posts/namestandardizationroutinesuploaded
+        
+        The NBER patent project used stata routines to standardize the 
+        names of firms in Compustat and patent data for record matching.
+        The name standardization routine is widely used to match firms via names.
+        
+        
+USE:    Clean_names is the main function, taking as first argument the company name
+        in string format.  Three boolean argument follow, which are by default set to
+        false: 
 
-DATE: 12/18/2020
-METHOD: I translate the routines for name standardization from the NBER patent
-        project into Python.
-        Source: https://sites.google.com/site/patentdataproject/Home/posts/namestandardizationroutinesuploaded
-    VERSION 2: Add additional cleaning routines from own experience
-    VERSION 4: Chance to faster string replace routines
-    VERSION 5: Incorporate changes from Pian Shu cleaning routine from the Paper
-                Foreign Competition and Domestic Innovation: Evidence from US Patents
-                (source: https://www.aeaweb.org/articles?id=10.1257/aeri.20180481)
-                => USPTO adjustments are for U.S. Patent and Inventor Database from Fung Institute
-
+        Arg for Clean_names:
+            name -> string of company name 
+            corporate_id_bool=False -> bool if a bool should be returned as third output that
+                                        is True for firm identifiers in the 'name'
+            adjusted=False -> bool if additional adjusted name cleaning should be performed
+            uspto_add_cleaning=False -> bool if name cleaning specific for USPTO assignees should
+                                        be performed
+        
+        Output:
+            if corporate_id_bool=False:
+                tuple with two values:
+                standard_name -> cleaned name
+                stemmed_name -> cleaned name with corporate identifiers removed
+            if corporate_id_bool=True:
+                tuple with above two values and third value that is True if the name matches 
+                    an the string structure of a corporate name 
 """
 import re
 
@@ -40,7 +55,6 @@ def punctuation(standard_name, uspto_add_cleaning):
 
     # Onw constribution, first stip leading and trailing white space and translate to lower
     # Then add white space around string to match description
-    #standard_name = 'a o from holland inc., the company of ass <SB (hello) &CCEDIL; A+O better than b und friends'
     standard_name = ' '+standard_name.upper().strip()+' '
 
     #cap prog drop punctuation
@@ -64,7 +78,7 @@ def punctuation(standard_name, uspto_add_cleaning):
     # =============================================================================
     # ** Replace accented characters with non-accented equivalents ****
     # # => ignore this since this should be solvable using utf-8 standard
-    # !!! potential issues with non-ascii characters might still need resolution
+    # potential issues with non-ascii characters might still need resolution
     # =============================================================================
 
     
@@ -77,7 +91,6 @@ def punctuation(standard_name, uspto_add_cleaning):
         # =============================================================================
         # Remove HTML like tags   
         # =============================================================================
-        #standard_name = "AO FROM HOLLAND </PDAT <PDAT <HIL </HIL <SB </SB <BOLD </BOLD <SP </SP <ULINE </ULINE </STEXT </ONM </NAM </HI <" 
         for c in ["</PDAT", "<PDAT", "<HIL", 
                   "</HIL", "<SB", "</SB", 
                   "<BOLD", "</BOLD", "<SP", 
@@ -105,7 +118,6 @@ def punctuation(standard_name, uspto_add_cleaning):
         standard_name = standard_name.replace("&ARING;", "A", 30)   
         standard_name = standard_name.replace("&CCEDIL;", "C", 30)   
      
-        #standard_name = 'HELLO &EXCL; &RSQUO; INC'
         for c in ["EXCL", "EQUALS", "PRIME", 
                    "STAR", "QUEST", "REG", 
                    "TRADE", "TILDE", "LDQUO",
@@ -118,7 +130,6 @@ def punctuation(standard_name, uspto_add_cleaning):
             if "&"+c+";" in standard_name:
                 standard_name = standard_name.replace("&"+c+";",  " ", 30)
     
-        #standard_name = 'HELLO &OACUTE; &AGRAVE; INC'
         for c1 in ["A", "E", "I", "O", "U", "S", "N", "C", "R", "Y"]:
             for c2 in ["GRAVE", "UML", "ACUTE", "CIRC", "TILDE", "SLASH"]:
                 if "&"+c1+c2+";" in standard_name:
@@ -128,7 +139,6 @@ def punctuation(standard_name, uspto_add_cleaning):
         # =============================================================================
         #  deal with {}
         # =============================================================================
-        #standard_name = 'HELLO {UMLAUT OVER ( {HACEK OVER))} INC'
         for c in ["{UMLAUT OVER (", "{UMLAUT OVER", "{ACUTE OVER (", "{ACUTE OVER", 
                   "{OVERSCORE (", "{OVERSCORE", "{DOT OVER (", "{DOT OVER", 
                   "{GRAVE OVER (", "{GRAVE OVER", "{TILDE OVER (", "{TILDE OVER", 
@@ -146,7 +156,6 @@ def punctuation(standard_name, uspto_add_cleaning):
         # =============================================================================
         # Remove punctuation characters
         # =============================================================================
-        #standard_name = "AO FROM HOLLAND ' ; ^ < . ` _ > '' ! + ? ( � { \ ) $ } | , % [ � * ] / @ : ~ # - β – ‘ ’ “ ″ ” • ′ “ ” ′ ″ ※ ™ ★ = ¶ INC "
             
         for c in ["'", ";", "^", "<", ".", "`", "_", ">", "''",
                   "!", "?", "�", "{", "\\", "$",
@@ -163,7 +172,6 @@ def punctuation(standard_name, uspto_add_cleaning):
         # =============================================================================
         # deal with () - remove content within
         # =============================================================================
-        #standard_name = 'AO OF HOLLAND (SA) DIHEAD) INC'
         for c in ["(SOUTH AFRICA)", "(PROPRIETARY)", "(S)", "(SA)", "(SM)", "(UK)", "(US)",
                   "(PTY)", "(AFRICA)", "(ICS)", "(1989)", "(TS-A)", "(ISRAEL)",
                   "(ARO) (VOLCANI CENTER)", "(NIH)",
@@ -216,8 +224,6 @@ def punctuation(standard_name, uspto_add_cleaning):
     #** For files downloaded from EPO Espace & appears as &amp;
     #** Also recode all common words for "AND" to &
 
-    #standard_name = 'AO FROM HOLLAND + &AMP; + AND ET UND INC '
-    #standard_name = 'AO FROM HOLLAND AND ET UND INC '
     for c in ["&AMP;", "&PLUS;", "+", " AND ", " ET ", " & AND ", " & ET ", " UND "]:
         if c in standard_name:
             standard_name = standard_name.replace(c, " & ", 5)
@@ -2076,7 +2082,6 @@ def combabbrev(standard_name):
     # * this assumes name string begins and ends with space
     # =============================================================================
 
-    #standard_name = 'A O FROM HOLLAND   &     A     O    &   &   &  INC '
     outname = " "
 
     # remove quote characters
@@ -2720,7 +2725,7 @@ def Clean_names(name, corporate_id_bool=False, adjusted=False, uspto_add_cleanin
     standard_name = combabbrev(standard_name)
 
     #====================================================================
-    #!!! I add aditional string adjustments that can be useful
+    # I add aditional string adjustments that can be useful
     if adjusted:
         standard_name = re.sub(" hld "," HLDGS ", standard_name, 30, re.IGNORECASE)
         standard_name = re.sub(" inds "," IND ", standard_name, 30, re.IGNORECASE)
@@ -2738,7 +2743,7 @@ def Clean_names(name, corporate_id_bool=False, adjusted=False, uspto_add_cleanin
     stemmed_name = stem_name(standard_name)
     # # ?*5*/ replace stem_name = trim(stem_name)
 
-    # !!! Return stem only if not firm identification is requested
+    # Return stem only if not firm identification is requested
     if corporate_id_bool:
         return(standard_name.strip(), stemmed_name.strip(), type_firm)
     else:
@@ -2747,36 +2752,3 @@ def Clean_names(name, corporate_id_bool=False, adjusted=False, uspto_add_cleanin
 
 
 
-r'''
-##############################################
-# Local testing                              #
-##############################################
-
-test = 'a o from holland inc., the company of ass <SB (hello) &CCEDIL; A+O better than b und friends'
-Clean_names(test, True, False, True)
-Clean_names(test, True, False, False)
-
-test2 = 'AO FROM HOLLAND INC.'
-Clean_names(test2, False)
-corporates_bool(test2)
-
-linktable = pd.read_csv(r"C:\Users\domin\Google Drive\Preliminary Research\Alice and Innovation Project\Patent Portfolio and Economic Data\Patent_portfolio_structuring_source_directory\linktable.csv")
-
-(linktable.conm.astype(str).apply(lambda x: x.upper()) == linktable.CONML.astype(str).apply(lambda x: x.upper())).value_counts(normalize=True)
-#True     0.722521
-#False    0.277479
-
-linktable[(linktable.conm.astype(str).apply(lambda x: x.upper()) != linktable.CONML.astype(str).apply(lambda x: x.upper()))][['conm', 'CONML']].drop_duplicates().iloc[1:100, ]
-# => overall very similar, leave with legal names since is in patents
-
-def Clean_name_anonymous(x):
-    return Clean_names(x, corporate_id_bool=False, adjusted=True, uspto_add_cleaning=False)
-
-linktable['conm_clean'] = linktable.conm.astype(str).apply(Clean_name_anonymous)
-
-linktable['conml_clean'] = linktable.apply(lambda r: Clean_names(str(r['CONML']),
-                                                                corporate_id_bool=False,
-                                                                adjusted=True,
-                                                                uspto_add_cleaning=False),
-                                          axis=1).apply(pd.Series)
-r'''
